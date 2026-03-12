@@ -1,0 +1,19 @@
+[package]
+name = "rconsole"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Imad El Badisy"]
+description = "Small Rust CLI that keeps /ask, /r, and /codex in one terminal transcript"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/ielbadisy/rconsole"
+homepage = "https://github.com/ielbadisy/rconsole"
+keywords = ["cli", "r", "codex", "repl", "terminal"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "=0.7.8"
