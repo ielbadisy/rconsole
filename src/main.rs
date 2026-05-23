@@ -31,8 +31,8 @@ fn main() -> Result<()> {
     let mut state = AppState::new(cwd, project_root, config, workspace, context);
     match parse_cli(env::args().skip(1).collect()) {
         CliAction::RunCommand(command) => {
-            let should_continue = handle_line(&mut state, &command)?;
-            return if should_continue { Ok(()) } else { Ok(()) };
+            handle_line(&mut state, &command)?;
+            return Ok(());
         }
         CliAction::ShowHelp => {
             print_help();
@@ -85,7 +85,9 @@ fn parse_cli(args: Vec<String>) -> CliAction {
         [] => CliAction::StartRepl,
         [flag] if flag == "--help" || flag == "-h" => CliAction::ShowHelp,
         [flag] if flag == "--version" || flag == "-V" => CliAction::ShowVersion,
-        [flag] if flag == "--command" => CliAction::Error("missing value for --command".to_string()),
+        [flag] if flag == "--command" => {
+            CliAction::Error("missing value for --command".to_string())
+        }
         [flag, rest @ ..] if flag == "--command" => CliAction::RunCommand(rest.join(" ")),
         _ => CliAction::Error(format!("unsupported arguments: {}", args.join(" "))),
     }
@@ -128,7 +130,11 @@ fn handle_line(state: &mut AppState, line: &str) -> Result<bool> {
         Ok(command) => dispatch(state, command),
         Err(router::ParseError::Empty) => Ok(true),
         Err(router::ParseError::UnknownCommand(command)) => {
-            print_entry("[system]", TranscriptKind::System, format!("unknown command: {command}"));
+            print_entry(
+                "[system]",
+                TranscriptKind::System,
+                format!("unknown command: {command}"),
+            );
             Ok(true)
         }
         Err(router::ParseError::MissingArgument(command)) => {
@@ -147,9 +153,10 @@ fn dispatch(state: &mut AppState, command: Command) -> Result<bool> {
         format!("[user:{}]", command.label()),
         TranscriptKind::User,
         match &command {
-            Command::Ask(text) | Command::R(text) | Command::RGlimpse(text) | Command::Codex(text) => {
-                text.clone()
-            }
+            Command::Ask(text)
+            | Command::R(text)
+            | Command::RGlimpse(text)
+            | Command::Codex(text) => text.clone(),
             _ => String::new(),
         },
     ));
@@ -165,7 +172,11 @@ fn dispatch(state: &mut AppState, command: Command) -> Result<bool> {
         }
         Command::Quit => Ok(false),
         Command::Pwd => {
-            print_entry("[system]", TranscriptKind::System, state.cwd.display().to_string());
+            print_entry(
+                "[system]",
+                TranscriptKind::System,
+                state.cwd.display().to_string(),
+            );
             Ok(true)
         }
         Command::Context => {
@@ -198,7 +209,14 @@ fn dispatch(state: &mut AppState, command: Command) -> Result<bool> {
             let session = ensure_r_session(state)?;
             let result = session.execute(&code)?;
             state.last_r_command = Some(code);
-            state.last_r_status = Some(if result.error.is_some() { "error" } else { "ok" }.to_string());
+            state.last_r_status = Some(
+                if result.error.is_some() {
+                    "error"
+                } else {
+                    "ok"
+                }
+                .to_string(),
+            );
             sync_r_context(state, Some(&result))?;
             render_r_result(&result);
             Ok(true)
@@ -208,7 +226,14 @@ fn dispatch(state: &mut AppState, command: Command) -> Result<bool> {
             let session = ensure_r_session(state)?;
             let result = session.execute(&code)?;
             state.last_r_command = Some(format!("glimpse({expression})"));
-            state.last_r_status = Some(if result.error.is_some() { "error" } else { "ok" }.to_string());
+            state.last_r_status = Some(
+                if result.error.is_some() {
+                    "error"
+                } else {
+                    "ok"
+                }
+                .to_string(),
+            );
             write_r_glimpse(&state.context, &expression, &result.output)?;
             sync_r_context(state, Some(&result))?;
             render_r_result(&result);
@@ -233,7 +258,11 @@ fn dispatch(state: &mut AppState, command: Command) -> Result<bool> {
             }
 
             print_entry("[Codex]", TranscriptKind::Codex, "running...");
-            let task_with_context = format!("{}\nUser task:\n{}", build_codex_preamble(&state.context), task);
+            let task_with_context = format!(
+                "{}\nUser task:\n{}",
+                build_codex_preamble(&state.context),
+                task
+            );
             let summary = run_codex_task(
                 &binary,
                 &state.project_root,
@@ -301,7 +330,10 @@ fn ensure_r_session(state: &mut AppState) -> Result<&mut rconsole::r::session::R
     Ok(state.r_session.as_mut().expect("R session initialized"))
 }
 
-fn sync_r_context(state: &mut AppState, result: Option<&rconsole::r::session::ExecutionResult>) -> Result<()> {
+fn sync_r_context(
+    state: &mut AppState,
+    result: Option<&rconsole::r::session::ExecutionResult>,
+) -> Result<()> {
     let objects = {
         let session = ensure_r_session(state)?;
         let objects_result = session.list_objects()?;
@@ -322,7 +354,13 @@ fn parse_r_objects(output: &str) -> Vec<String> {
     output
         .split('"')
         .enumerate()
-        .filter_map(|(index, part)| if index % 2 == 1 { Some(part.to_string()) } else { None })
+        .filter_map(|(index, part)| {
+            if index % 2 == 1 {
+                Some(part.to_string())
+            } else {
+                None
+            }
+        })
         .collect()
 }
 
@@ -357,7 +395,11 @@ fn render_r_result(result: &rconsole::r::session::ExecutionResult) {
         print_entry("[R]", TranscriptKind::R, format!("error: {error}"));
     }
     if let Some(plot_path) = &result.plot_path {
-        print_entry("[R]", TranscriptKind::R, format!("plot: {}", plot_path.display()));
+        print_entry(
+            "[R]",
+            TranscriptKind::R,
+            format!("plot: {}", plot_path.display()),
+        );
     }
     if result.output.is_empty() && result.error.is_none() && result.plot_path.is_none() {
         print_entry("[R]", TranscriptKind::R, "(no output)");
