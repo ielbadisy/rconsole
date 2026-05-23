@@ -1,4 +1,7 @@
-use std::{fs, path::{Path, PathBuf}};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -55,12 +58,17 @@ pub fn write_r_snapshot(
         last_command: last_command.map(ToOwned::to_owned),
         last_status: last_status.map(ToOwned::to_owned),
     };
-    fs::write(&paths.r_objects_json, serde_json::to_string_pretty(&snapshot)?)?;
+    fs::write(
+        &paths.r_objects_json,
+        serde_json::to_string_pretty(&snapshot)?,
+    )?;
     fs::write(&paths.r_last_command_txt, last_command.unwrap_or(""))?;
     fs::write(&paths.r_last_status_txt, last_status.unwrap_or(""))?;
 
     let last_output = match result {
-        Some(value) if value.output.is_empty() && value.error.is_none() => "(no output)".to_string(),
+        Some(value) if value.output.is_empty() && value.error.is_none() => {
+            "(no output)".to_string()
+        }
         Some(value) => {
             let mut parts = Vec::new();
             if !value.output.is_empty() {
@@ -130,7 +138,11 @@ fn touch(path: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::{Path, PathBuf}, time::{SystemTime, UNIX_EPOCH}};
+    use std::{
+        fs,
+        path::{Path, PathBuf},
+        time::{SystemTime, UNIX_EPOCH},
+    };
 
     use super::{
         build_codex_preamble, clear_r_snapshot, render_context, write_r_glimpse, write_r_snapshot,
@@ -147,8 +159,14 @@ mod tests {
             error: None,
             plot_path: None,
         };
-        write_r_snapshot(&paths, &["x".to_string()], Some("x <- 1 + 1"), Some("ok"), Some(&result))
-            .expect("write snapshot");
+        write_r_snapshot(
+            &paths,
+            &["x".to_string()],
+            Some("x <- 1 + 1"),
+            Some("ok"),
+            Some(&result),
+        )
+        .expect("write snapshot");
 
         let rendered = render_context(&paths).expect("render");
         assert!(rendered.contains("x <- 1 + 1"));

@@ -46,8 +46,16 @@ mod tests {
     #[test]
     fn stores_entries_in_order() {
         let mut transcript = Transcript::default();
-        transcript.push(TranscriptEntry::new("[system]", TranscriptKind::System, "ready"));
-        transcript.push(TranscriptEntry::new("[chat]", TranscriptKind::Chat, "hello"));
+        transcript.push(TranscriptEntry::new(
+            "[system]",
+            TranscriptKind::System,
+            "ready",
+        ));
+        transcript.push(TranscriptEntry::new(
+            "[chat]",
+            TranscriptKind::Chat,
+            "hello",
+        ));
 
         assert_eq!(transcript.entries().len(), 2);
         assert_eq!(transcript.entries()[0].content, "ready");

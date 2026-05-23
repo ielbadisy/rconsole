@@ -1,7 +1,7 @@
 use std::{
     fs::{self, OpenOptions},
-    io::{BufRead, BufReader},
     io::Write,
+    io::{BufRead, BufReader},
     path::{Path, PathBuf},
     process::{Command, ExitStatus, Stdio},
     thread,
@@ -43,8 +43,14 @@ pub fn run_codex_task(
         .spawn()
         .with_context(|| format!("failed to start {}", codex_binary.display()))?;
 
-    let stdout = child.stdout.take().context("failed to capture Codex stdout")?;
-    let stderr = child.stderr.take().context("failed to capture Codex stderr")?;
+    let stdout = child
+        .stdout
+        .take()
+        .context("failed to capture Codex stdout")?;
+    let stderr = child
+        .stderr
+        .take()
+        .context("failed to capture Codex stderr")?;
     let log_file = OpenOptions::new()
         .create(true)
         .append(true)
@@ -79,7 +85,12 @@ pub fn run_codex_task(
     let status = child.wait()?;
     let final_message = read_final_message(&last_message_path)?;
 
-    Ok(build_summary(task, status, final_message, log_path.to_path_buf()))
+    Ok(build_summary(
+        task,
+        status,
+        final_message,
+        log_path.to_path_buf(),
+    ))
 }
 
 fn build_summary(
@@ -124,7 +135,12 @@ mod tests {
             .arg("exit 3")
             .status()
             .expect("status");
-        let summary = build_summary("test", status, Some("done".to_string()), PathBuf::from("codex.log"));
+        let summary = build_summary(
+            "test",
+            status,
+            Some("done".to_string()),
+            PathBuf::from("codex.log"),
+        );
         assert!(!summary.success);
         assert_eq!(summary.exit_code, Some(3));
         assert_eq!(summary.final_message.as_deref(), Some("done"));

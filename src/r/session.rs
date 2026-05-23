@@ -149,7 +149,10 @@ impl Drop for RSession {
 }
 
 fn escape_r_string(path: &Path) -> String {
-    path.display().to_string().replace('\\', "/").replace('\'', "\\'")
+    path.display()
+        .to_string()
+        .replace('\\', "/")
+        .replace('\'', "\\'")
 }
 
 #[cfg(test)]
